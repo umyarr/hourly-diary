@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily hourly diary backup
+
+[Timer]
+OnCalendar=*-*-* 03:45:00 Europe/Moscow
+RandomizedDelaySec=120
+Persistent=true
+Unit=hourly-diary-backup.service
+
+[Install]
+WantedBy=timers.target

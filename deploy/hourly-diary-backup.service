@@ -1,0 +1,16 @@
+[Unit]
+Description=Consistent hourly diary SQLite and audio backup
+After=hourly-diary.service
+
+[Service]
+Type=oneshot
+User=hourlydiary
+Group=hourlydiary
+WorkingDirectory=/opt/hourly-diary
+ExecStart=/opt/hourly-diary/venv/bin/python -m hourly_diary backup --data-dir /var/lib/hourly-diary --output /var/lib/hourly-diary/backups --keep 14
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/hourly-diary

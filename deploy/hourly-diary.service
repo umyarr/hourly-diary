@@ -1,0 +1,28 @@
+[Unit]
+Description=Private hourly Telegram diary
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hourlydiary
+Group=hourlydiary
+WorkingDirectory=/opt/hourly-diary
+EnvironmentFile=/etc/hourly-diary.env
+ExecStart=/opt/hourly-diary/venv/bin/python -m hourly_diary run
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=40
+StateDirectory=hourly-diary
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/hourly-diary
+MemoryHigh=180M
+MemoryMax=240M
+
+[Install]
+WantedBy=multi-user.target
