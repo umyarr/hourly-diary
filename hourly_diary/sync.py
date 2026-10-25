@@ -180,7 +180,7 @@ def sync_once(host, vault, remote_python='/opt/hourly-diary/venv/bin/python', re
             subprocess.run(['scp', *options, '-P', str(ssh_port), host + ':' + remote_archive, str(local)], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=300)
             result = import_bundle(local, vault)
         finish_state, finish_code = 'completed', None
-        return {'result': 'completed', 'request_id': request_id, **result}
+        return {**result, 'request_id': request_id, 'result': 'completed'}
     except (OSError, ValueError, subprocess.SubprocessError, zipfile.BadZipFile):
         return {'result': 'error', 'request_id': request_id, 'code': finish_code}
     finally:

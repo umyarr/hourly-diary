@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import zipfile
 from zoneinfo import ZoneInfo
+from .event_time import explicit_event_time
 
 
 def audio_source(data_dir, relative):
@@ -31,9 +32,13 @@ def snapshot(store, config, start='0001-01-01', end='9999-12-31'):
     entries = []
     for row in rows:
         period = {'start': row['period_start'], 'end': row['period_end']} if row['period_start'] else None
+        transcript = row['corrected'] or row['transcript'] or ''
+        event_time = None if period else explicit_event_time(
+            transcript if row['kind'] == 'voice' else row['text'] or '')
         entries.append({
             'id': row['id'], 'version': row['version'], 'kind': row['kind'], 'local_date': row['day'],
-            'period': period, 'message_at': row['message_at'], 'received_at': row['received_at'],
+            'period': period, 'event_time': event_time,
+            'message_at': row['message_at'], 'received_at': row['received_at'],
             'edited_at': row['edited_at'], 'source_message_id': row['message_id'],
             'source_reply_message_id': row['reply_message_id'],
             'unresolved_reply': bool(row['reply_message_id'] and not row['prompt_id'] and not row['parent_id']),
@@ -66,11 +71,15 @@ def render_markdown(entries, timezone_name, audio_prefix='audio/'):
         if e['period']:
             start = datetime.fromisoformat(e['period']['start']).astimezone(tz)
             end = datetime.fromisoformat(e['period']['end']).astimezone(tz)
-            label = f'{start:%H:%M}–{end:%H:%M}'
+            event_label = f'{start:%H:%M}–{end:%H:%M}'
+        elif (event_time := (e.get('event_time') or {})).get('type') == 'interval':
+            event_label = f"{event_time['start']}–{event_time['end']}"
+        elif event_time.get('type') == 'point':
+            event_label = event_time['time']
         else:
-            label = 'Свободная запись'
-        output += [f"<!-- entry:{e['id']}:v{e['version']} -->", f'### {label} · {stamp:%H:%M} · {e["kind"]}']
-        output += [f'Время ответа: {stamp.isoformat()}']
+            event_label = 'Время события не указано'
+        output += [f"<!-- entry:{e['id']}:v{e['version']} -->", f'### {event_label} · отправлено в {stamp:%H:%M} · {e["kind"]}']
+        output += [f'Время отправки: {stamp.isoformat()}']
         if e['parent_entry_id']:
             output += ['Дополнение к записи ' + e['parent_entry_id']]
         if e['kind'] == 'text':
